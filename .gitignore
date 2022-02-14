@@ -1,0 +1,11 @@
+*.pyc
+__pycache__
+.env
+.idea
+db.sqlite3
+*.log
+*.pot
+_requirements.txt
+migrations
+requirements_win.txt
+
