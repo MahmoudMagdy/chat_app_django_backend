@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.utils import timezone
+from django.core.cache import cache
 
 
 class UserManager(BaseUserManager):
@@ -26,6 +27,9 @@ class UserManager(BaseUserManager):
         user.is_staff = True
         user.save()
         return user
+
+
+NOTIFICATIONS_CACHE_TTL = 60 * 60 * 2
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -58,6 +62,27 @@ class User(AbstractBaseUser, PermissionsMixin):
         return f'user.{self.pk}.chats'
 
     @property
+    def notifications_group(self):
+        return f'user.{self.pk}.notifications'
+
+    @property
+    def notifications_group_active(self):
+        return cache.get(f'user:{self.pk}:notifications:active')
+
+    @notifications_group_active.setter
+    def notifications_group_active(self, value):
+        if value:
+            cache.set(f'user:{self.pk}:notifications:active', 1, timeout=NOTIFICATIONS_CACHE_TTL)
+        else:
+            cache.delete(f'user:{self.pk}:notifications:active')
+
+    def activate_notifications(self):
+        self.notifications_group_active = True
+
+    def deactivate_notifications(self):
+        self.notifications_group_active = False
+
+    @property
     def active_session(self):
         session = None
         try:
@@ -65,6 +90,27 @@ class User(AbstractBaseUser, PermissionsMixin):
         except Session.DoesNotExist:
             pass
         return session
+
+    @property
+    def active_chat_session(self):
+        session = None
+        try:
+            session = self.chats_sessions.filter(state='ACTIVE').latest('started_at')
+        except Session.DoesNotExist:
+            pass
+        return session
+
+    @property
+    def active_chats_sessions(self):
+        return self.chats_sessions.filter(state='ACTIVE')
+
+    # def active_chat_session(self, chat):
+    #     session = None
+    #     try:
+    #         session = self.chats_sessions.filter(chat=chat, state='ACTIVE').latest('started_at')
+    #     except Session.DoesNotExist:
+    #         pass
+    #     return session
 
     @property
     def session(self):
@@ -75,11 +121,11 @@ class User(AbstractBaseUser, PermissionsMixin):
             pass
         return session
 
-    def start_session(self):
+    def start_session(self, channel_name):
         sessions = self.sessions
         for session in sessions.filter(state='ACTIVE'):
             session.end()
-        return sessions.create()
+        return sessions.create(channel_name=channel_name)
 
     def has_profile(self):
         return hasattr(self, 'profile')
@@ -157,6 +203,7 @@ class Session(models.Model):
     ]
     user = models.ForeignKey(to=User, on_delete=models.DO_NOTHING, related_name='sessions')
     state = models.CharField(choices=STATE_OPTIONS, default='ACTIVE', max_length=30, db_index=True)
+    channel_name = models.CharField(max_length=255)
     started_at = models.DateTimeField(default=timezone.now, db_index=True)
     ended_at = models.DateTimeField(default=None, db_index=True, null=True)
 

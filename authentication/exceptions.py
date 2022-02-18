@@ -49,3 +49,9 @@ class ProfileAlreadyExists(AuthException):
     code = 'profile_already_exists'
     message = 'User Profile already exists.'
     fields = ['profile']
+
+
+# Websocket Errors
+def auth_user_not_found():
+    return 4003
+
