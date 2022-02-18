@@ -4,7 +4,6 @@ from authentication.serializers import ChatUserSerializer
 
 
 class MessageSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Message
         fields = ['id', 'chat_id', 'user_id', 'type', 'content', 'created_at']

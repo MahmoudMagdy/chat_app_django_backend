@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     # My Apps
     'authentication',
     'chat',
+    'notification',
 ]
 
 MIDDLEWARE = [
@@ -80,6 +81,7 @@ TEMPLATES = [
 WSGI_APPLICATION = 'chat_app.wsgi.application'
 # Channels
 ASGI_APPLICATION = 'chat_app.asgi.application'
+
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
@@ -98,6 +100,21 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "COMPRESSOR": "django_redis.compressors.zlib.ZlibCompressor",
+        }
+    }
+}
+
+# This is if i've decided to use Session with JWT
+# SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+# SESSION_CACHE_ALIAS = "default"
 
 REST_FRAMEWORK = {
     'NON_FIELD_ERRORS_KEY': 'error',

@@ -61,7 +61,7 @@ class TokenAuthMiddleware:
         if b'authorization' in headers:
             try:
                 scope['user'] = await self.authenticate_credentials(headers[b'authorization'])
-            except (AuthenticationFailed, Exception) as e:
+            except (AuthenticationFailed, Exception):
                 scope['user'] = AnonymousUser()
         else:
             scope['user'] = AnonymousUser()

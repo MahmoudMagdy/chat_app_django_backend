@@ -46,9 +46,6 @@ class NoChatRequested(ChatException):
 """
 
 
-def auth_user_not_found():
-    return 4003
-
 
 def unauthoraized_chat_access():
     return 4004
